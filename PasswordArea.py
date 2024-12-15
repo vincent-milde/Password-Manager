@@ -6,6 +6,28 @@ from PyQt5.QtGui import *
 #placeholder for masterpassword
 HasAcess = True
 
+#Super weird custom password widget
+class PasswordWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+         
+        #Initilazing layout for 1 Label/Text field and the 2 buttons to show/hide and copy
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        
+        #Text Area
+        self.stackedWidget = QStackedWidget()
+        self.Label = QLabel()
+        self.LineEdit = QLineEdit()
+        
+        #Button Area
+        self.show_button = QPushButton()
+        self.copy_button = QPushButton()     
+        
+    def setText(string):
+        pass
+         
+         
 class PasswordArea(QMainWindow):
     def __init__(self):
         #Initiliaze main window
@@ -26,8 +48,10 @@ class PasswordArea(QMainWindow):
         
         #Add left and right frame
         left = self.create_left_side()
+        right = self.create_right_side()
         
         splitterH.addWidget(left)
+        splitterH.addWidget(right)
         
     #Create the Frame etc for the Left side    
     def create_left_side(self):
@@ -63,30 +87,35 @@ class PasswordArea(QMainWindow):
         main_frame = QFrame()
         main_layout = QVBoxLayout(main_frame)
         
-    #Frame 1 (Showcase of username password etc)
+        #Frame 1 (Showcase of username password etc)
         frame1 = QFrame()
         layout_top = QVBoxLayout()
         frame1.setLayout(layout_top)
         
-    #Domain Label Section
+            #Domain Label Section
         domain_layout = QHBoxLayout()
         
-        #Label
+                #Label
         self.domain_label = QLabel()
         self.domain_label.setText("Placeholder")
         
-        #Edit Button
+                #Edit Button
         self.edit_button = QPushButton()
         self.edit_button.setText("Edit")
         self.edit_button.clicked.connect(self.edit_button_clicked)  # Correct signal connection
-
-
-
         
+        #Add Widgets
+        domain_layout.addWidget(self.domain_label)
+        domain_layout.addWidget(self.edit_button)
         
-        layout_top.addWidget(self.domain_label)
+        #Add Domain edit Section to top layout
+        layout_top.addWidget(domain_layout)
+            
     #username Section
-        
+
+        #Create Weird Readonly but also not read only Widget
+                
+
     #password Section
         
         
@@ -96,7 +125,8 @@ class PasswordArea(QMainWindow):
         #finilazing layout hiarchy
         main_layout.addWidget(frame1)
         main_layout.addWidget(frame2)        
-
+        
+        return main_frame
     def edit_button_clicked(self):  # Correct method name
             print("Edit button clicked!")
 
