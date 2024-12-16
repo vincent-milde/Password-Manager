@@ -10,23 +10,60 @@ HasAcess = True
 class PasswordWidget(QWidget):
     def __init__(self):
         super().__init__()
-         
-        #Initilazing layout for 1 Label/Text field and the 2 buttons to show/hide and copy
-        self.layout = QHBoxLayout()
-        self.setLayout(self.layout)
+        
+        self.setPassword("password")
+        #Initilazing layout for /Text field and the 2 buttons to show/hide and copy
+        layout = QHBoxLayout()
+        self.setLayout(layout)
         
         #Text Area
-        self.stackedWidget = QStackedWidget()
-        self.Label = QLabel()
-        self.LineEdit = QLineEdit()
+        self.line_edit = QLineEdit()
+        layout.addWidget(self.line_edit)
         
+        #initillize lineEdit
+        self.line_edit.setText(self.hidePassword(self.password))
+        self.line_edit.setReadOnly()
+                       
         #Button Area
         self.show_button = QPushButton()
         self.copy_button = QPushButton()     
         
-    def setText(string):
-        pass
-         
+        #initillize Buttons
+        self.show_button.clicked.connect(self.showButtonClicked)
+    
+    
+    
+    def showButtonClicked(self):
+        if HasAcess :
+            if self.password_is_Hidden == True :
+                self.showPassword()
+            elif self.password_is_Hidden == False :
+                self.hidePassword
+        else:
+            self.hidePassword
+            print("Access Denied")
+            Warning("No Access but bypassed into GUI")
+    
+    def copyButtonClicked(self):
+        if HasAcess :
+            #Add logic to copy password to clipboard
+            pass 
+                   
+    def setPassword(self, password):
+        self.password = password    
+        
+    def hidePassword(self):
+        masked_password = "*" * len(self.password)
+        self.line_edit.setText(masked_password)
+        self.password_is_Hidden = True
+        
+    def showPassword(self):
+        if HasAcess:
+            self.line_edit.setText(self.password)
+            self.password_is_Hidden = False
+        else:
+            print("Access Denied")
+            Warning("No Access but tried to show password")
          
 class PasswordArea(QMainWindow):
     def __init__(self):
@@ -127,7 +164,7 @@ class PasswordArea(QMainWindow):
         main_layout.addWidget(frame2)        
         
         return main_frame
-    def edit_button_clicked(self):  # Correct method name
+    def edit_button_clicked(self):  
             print("Edit button clicked!")
 
 
