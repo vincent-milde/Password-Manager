@@ -12,11 +12,16 @@ class PasswordWidget(QWidget):
         #Initillize main
         super().__init__()
         self.setPassword("password")
-        self.hasAcess = True
+        self.hasAcess = False
         
         #Initilazing layout for the Text field and the 2 buttons to show/hide and copy
         layout = QHBoxLayout()
         self.setLayout(layout)
+        
+        #Label
+        self.label = QLabel()
+        self.label.setText("default:")
+        layout.addWidget(self.label)
         
         #Text Area
         self.line_edit = QLineEdit()
@@ -40,6 +45,9 @@ class PasswordWidget(QWidget):
         self.copy_button.setText("Copy")
         self.copy_button.clicked.connect(self.copyButtonClicked)
         layout.addWidget(self.copy_button)
+    
+    def setLabel(self, str):
+        self.label.setText(str)
     
     def setAccess(self,setBool):
         if setBool:

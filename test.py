@@ -1,48 +1,57 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout
-from PyQt5.QtGui import QPalette, QColor
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QListWidget, QMenu, QAction, QMessageBox
+)
+from PyQt5.QtCore import Qt
 
-class Color(QWidget):
 
-    def __init__(self, color):
-        super().__init__()
-        self.setAutoFillBackground(True)
-
-        palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(color))
-        self.setPalette(palette)
-        
 class MainWindow(QMainWindow):
-
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("My App")
+        self.setWindowTitle("QListWidget Right Click Menu")
+        self.setGeometry(100, 100, 400, 300)
 
-        layout1 = QHBoxLayout()
-        layout2 = QVBoxLayout()
-        layout3 = QVBoxLayout()
+        # Initialize QListWidget
+        self.list_widget = QListWidget()
+        self.setCentralWidget(self.list_widget)
 
-        layout2.addWidget(Color('red'))
-        layout2.addWidget(Color('yellow'))
-        layout2.addWidget(Color('purple'))
+        # Add sample items
+        for i in range(5):
+            self.list_widget.addItem(f"File {i+1}")
 
-        layout1.addLayout( layout2 )
+        # Enable custom context menu
+        self.list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
 
-        layout1.addWidget(Color('green'))
+    def show_context_menu(self, position):
+        # Get the clicked item
+        item = self.list_widget.itemAt(position)
+        
+        if item:  # Context menu only if an item was clicked
+            menu = QMenu()
 
-        layout3.addWidget(Color('red'))
-        layout3.addWidget(Color('purple'))
+            # Add actions
+            delete_action = QAction("Delete", self)
+            delete_action.triggered.connect(lambda: self.delete_item(item))
+            menu.addAction(delete_action)
 
-        layout1.addLayout( layout3 )
+            # Show the menu
+            menu.exec_(self.list_widget.viewport().mapToGlobal(position))
 
-        widget = QWidget()
-        widget.setLayout(layout1)
-        self.setCentralWidget(widget)
+    def delete_item(self, item):
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self, "Delete File", f"Are you sure you want to delete '{item.text()}'?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.list_widget.takeItem(self.list_widget.row(item))
 
-app = QApplication(sys.argv)
 
-window = MainWindow()
-window.show()
-
-app.exec()
+# Main application loop
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())

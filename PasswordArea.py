@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import *        #QApplication, QMainWindow, QVBoxLayout, QWidget, QSplitter, QListWidget
 from PyQt5.QtCore import *           # Qt
 from PyQt5.QtGui import *
-
+from PasswordWidget import PasswordWidget
 #placeholder for masterpassword
 HasAcess = True
    
@@ -44,7 +44,6 @@ class PasswordArea(QMainWindow):
         #Search Bar
         search_bar = QLineEdit()
         search_bar.setPlaceholderText("Search...")
-        search_bar
         layout.addWidget(search_bar)
         
         #List Widget
@@ -74,7 +73,7 @@ class PasswordArea(QMainWindow):
         
                 #Label
         self.domain_label = QLabel()
-        self.domain_label.setText("Placeholder")
+        self.domain_label.setText("Domain")
         
                 #Edit Button
         self.edit_button = QPushButton()
@@ -86,15 +85,23 @@ class PasswordArea(QMainWindow):
         domain_layout.addWidget(self.edit_button)
         
         #Add Domain edit Section to top layout
-        layout_top.addWidget(domain_layout)
+        layout_top.addLayout(domain_layout)
             
     #username Section
 
         #Create Weird Readonly but also not read only Widget
-                
+        self.username_widget = PasswordWidget()
+        self.username_widget.setLabel("username: ")
+        self.username_widget.setPassword("Vincent")
+        self.username_widget.setAccess(True)
+        layout_top.addWidget(self.username_widget)
 
     #password Section
-        
+        self.password_widget = PasswordWidget()
+        self.password_widget.setLabel("password: ")
+        self.password_widget.setPassword("Milde")
+        self.password_widget.setAccess(True)
+        layout_top.addWidget(self.password_widget)
         
     #Frame 2 (Showcase of databreaches) ---  WIP
         frame2 = QFrame()
@@ -104,6 +111,7 @@ class PasswordArea(QMainWindow):
         main_layout.addWidget(frame2)        
         
         return main_frame
+    
     def edit_button_clicked(self):  
             print("Edit button clicked!")
 
