@@ -14,6 +14,34 @@ class PasswordArea(QMainWindow):
         self.setWindowTitle("PasswordArea")
         self.setGeometry(100, 100, 800, 600)
         
+        #styling
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #2b2b2b;
+                color: #ffffff;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+            }
+            QLineEdit, QPushButton {
+                background-color: #3c3f41;
+                border: 1px solid #555555;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            QLineEdit:focus, QPushButton:pressed {
+                border: 1px solid #0078d7;
+            }
+            QSplitter::handle {
+                background-color: #555555;
+            }
+            QFrame {
+                border: none;
+            }
+            QLabel {
+                font-weight: bold;
+            }
+        """)
+        
         #pack main widget
         widget = QWidget()
         self.setCentralWidget(widget)
@@ -78,6 +106,7 @@ class PasswordArea(QMainWindow):
                 #Edit Button
         self.edit_button = QPushButton()
         self.edit_button.setText("Edit")
+        self.edit_button.setFixedSize(100, 30)
         self.edit_button.clicked.connect(self.edit_button_clicked)  # Correct signal connection
         
         #Add Widgets
