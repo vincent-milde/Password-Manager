@@ -82,7 +82,8 @@ class PasswordArea(QMainWindow):
 
         # Password Details Placeholder
         return frame
-
+    
+    
     def password_details(self, item):
         print(f"Selected Item: {item.text()}")
     
@@ -122,14 +123,14 @@ class PasswordArea(QMainWindow):
         self.username_widget = PasswordWidget()
         self.username_widget.setLabel("username: ")
         self.username_widget.setPassword("Vincent")
-        self.username_widget.setAccess(True)
+        self.username_widget.setAccess(HasAcess)
         layout_top.addWidget(self.username_widget)
 
     #password Section
         self.password_widget = PasswordWidget()
         self.password_widget.setLabel("password: ")
         self.password_widget.setPassword("Milde")
-        self.password_widget.setAccess(True)
+        self.password_widget.setAccess(HasAcess)
         layout_top.addWidget(self.password_widget)
         
     #Frame 2 (Showcase of databreaches) ---  WIP

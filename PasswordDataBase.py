@@ -1,5 +1,12 @@
 import sqlite3
-import sqlcipher
+import base64
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+import os
+
 '''
 Create a Database that stores a domain with a username and password bound to it
 
@@ -7,9 +14,77 @@ create methods to:
     add/delete passwords
     fetch/edit Data
     search data by domain
-'''
+''' 
+
+##################################################
+#
+#             Provided by Examples
+#
+##################################################
+
+# Constants
+SALT_SIZE = 16  # Size of the salt
+KEY_SIZE = 32   # AES 256-bit key
+IV_SIZE = 16    # AES block size for CBC (128 bits)
+
+# Deriving the key from a password using PBKDF2
+def derive_key(password, salt):
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=KEY_SIZE,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    return kdf.derive(password.encode())
+
+# Encrypt function using AES in CBC mode
+def encrypt_data(data, key):
+
+    # Generate a random IV
+    iv = os.urandom(IV_SIZE)
+
+    # Pad data to be block-size compliant
+    padder = padding.PKCS7(128).padder()  # AES block size = 128 bits
+    padded_data = padder.update(data.encode()) + padder.finalize()
+    
+    # Set up AES CBC mode
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    
+    # Encrypt the padded data
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+    
+    return ciphertext, iv
+    
+
+# Decrypt function using AES in CBC mode
+def decrypt_data(encrypted_data, key, iv):
+    # Extract the salt, IV, and ciphertext from the encrypted data
+    ciphertext = encrypted_data
+    
+    # Set up AES CBC mode
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    
+    # Decrypt the data
+    padded_data = decryptor.update(ciphertext) + decryptor.finalize()
+    
+    # Remove padding
+    unpadder = padding.PKCS7(128).unpadder()
+    data = unpadder.update(padded_data) + unpadder.finalize()
+    
+    return data.decode()
 
 
+
+
+
+##################################################
+#
+#                 End of Examples
+#
+##################################################
 class PasswordDataBase ():
     def __init__(self):
         #connect to the database
@@ -20,9 +95,26 @@ class PasswordDataBase ():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             domain TEXT NOT NULL UNIQUE,
             username TEXT NOT NULL,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            IV TEXT NOT NULL                                    #initialization vector used for Encryption of the data (2 way)
             )               
             """)
+        
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS masterpassword (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            salt TEXT NOT NULL     
+            )                 
+            """)
+        
+        # Check if there is a salt, if not, create one
+        self.cursor.execute("SELECT salt FROM masterpassword")
+        if not self.cursor.fetchone():                  #fetch the first row and check if it's empty
+            salt = base64.b64encode(os.urandom(16)).decode('utf-8')
+            self.cursor.execute("INSERT INTO masterpassword (salt) VALUES (?)", (salt,))
+            self.connection.commit()
+        
+        
     def connect(self):
         #connect to the database
         self.connection = sqlite3.connect("passwords.db")
