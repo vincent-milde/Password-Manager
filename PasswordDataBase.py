@@ -85,8 +85,10 @@ def decrypt_data(encrypted_data, key, iv):
 #                 End of Examples
 #
 ##################################################
+password = "1234"
+
 class PasswordDataBase ():
-    def __init__(self):
+    def __init__(self, masterpassword):
         #connect to the database
         self.connect()
         #Main Table/format for storing the data
@@ -95,26 +97,30 @@ class PasswordDataBase ():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             domain TEXT NOT NULL UNIQUE,
             username TEXT NOT NULL,
-            password TEXT NOT NULL,
-            IV TEXT NOT NULL                                    #initialization vector used for Encryption of the data (2 way)
+            password BLOB NOT NULL,
+            IV BLOB NOT NULL                                   
             )               
             """)
         
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS masterpassword (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            salt TEXT NOT NULL     
+            salt BLOB NOT NULL     
             )                 
             """)
         
         # Check if there is a salt, if not, create one
         self.cursor.execute("SELECT salt FROM masterpassword")
         if not self.cursor.fetchone():                  #fetch the first row and check if it's empty
-            salt = base64.b64encode(os.urandom(16)).decode('utf-8')
+            salt =os.urandom(16)
             self.cursor.execute("INSERT INTO masterpassword (salt) VALUES (?)", (salt,))
             self.connection.commit()
+        else: 
+            salt = self.cursor.fetchone()
         
-        
+        print(salt)
+        self.key = derive_key(masterpassword, salt)
+
     def connect(self):
         #connect to the database
         self.connection = sqlite3.connect("passwords.db")
@@ -136,7 +142,8 @@ class PasswordDataBase ():
         self.connect()
         
         #add a domain, username and password at the same time
-        self.cursor.execute("INSERT INTO passwords (domain, username, password) VALUES (?,?,?)", (domain, username, password))
+        encryptedPassword, iv = encrypt_data(password, self.key)
+        self.cursor.execute("INSERT INTO passwords (domain, username, password, IV) VALUES (?,?,?,?)", (domain, username, encryptedPassword, iv))
         self.connection.commit()
         self.connection.close()    
 
@@ -185,7 +192,8 @@ class PasswordDataBase ():
         data = self.cursor.fetchall()
         return data
     
-PasswordDataBase = PasswordDataBase()
+PasswordDataBase = PasswordDataBase("1234")
+PasswordDataBase.add_entry("google.com", "vincent", "Tye" )
 print(PasswordDataBase.get_domains())
 
 

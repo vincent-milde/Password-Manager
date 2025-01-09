@@ -4,7 +4,7 @@ from PyQt5.QtCore import *           # Qt
 from PyQt5.QtGui import *
 from PasswordWidget import PasswordWidget
 #placeholder for masterpassword
-HasAcess = True
+HasAcess = False
    
 class PasswordArea(QMainWindow):
     def __init__(self):

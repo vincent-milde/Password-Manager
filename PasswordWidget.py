@@ -58,20 +58,22 @@ class PasswordWidget(QWidget):
             Warning("Acess state undefined!")
             
     def toggleEditeable(self):
-        if self.line_edit.isReadOnly():
-            self.line_edit.setReadOnly(False)
-        elif not self.line_edit.isReadOnly():
-            self.line_edit.setReadOnly(True)
-        else:
-            Warning("Edit state undefined!")
+        if self.hasAcess:
+            if self.line_edit.isReadOnly():
+                self.line_edit.setReadOnly(False)
+            elif not self.line_edit.isReadOnly():
+                self.line_edit.setReadOnly(True)
+            else:
+                Warning("Edit state undefined!")
             
     def setEditable(self, toggleBool):
-        if toggleBool == True:
-            self.line_edit.setReadOnly(False)
-        elif toggleBool == False:
-            self.line_edit.setReadOnly(True)
-        else:
-            Warning("Edit state undefined!")
+        if self.hasAcess:
+            if toggleBool == True:
+                self.line_edit.setReadOnly(False)
+            elif toggleBool == False:
+                self.line_edit.setReadOnly(True)
+            else:
+                Warning("Edit state undefined!")
             
     def showButtonClicked(self):
         if self.hasAcess :
