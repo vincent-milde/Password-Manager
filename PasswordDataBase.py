@@ -105,7 +105,8 @@ class PasswordDataBase ():
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS masterpassword (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            salt BLOB NOT NULL     
+            salt BLOB NOT NULL,
+            hash BLOB NOT NULL
             )                 
             """)
         
