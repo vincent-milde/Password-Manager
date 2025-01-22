@@ -1,10 +1,10 @@
 import sqlite3
-import base64
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
+import hashlib
 import os
 
 '''
@@ -76,19 +76,52 @@ def decrypt_data(encrypted_data, key, iv):
     
     return data.decode()
 
-
-
-
-
 ##################################################
 #
 #                 End of Examples
 #
 ##################################################
-password = "1234"
+
+
+
+
 
 class PasswordDataBase ():
-    def __init__(self, masterpassword):
+    
+    
+##################################
+#                                #
+#           Init for Db          #
+#                                #
+##################################
+
+
+    def connect(self):
+        #connect to the database
+        self.connection = sqlite3.connect("passwords.db")
+        self.cursor = self.connection.cursor()
+        
+    def database_exists(self):
+        try:
+            # Connect to the database
+            self.connect()
+
+            # Try to fetch the master password hash
+            self.cursor.execute("SELECT hash FROM masterpassword")
+            # If we can fetch the hash, the database exists
+            result = self.cursor.fetchone()
+            self.connection.close()
+
+            if result is None:
+                return False  # The masterpassword hash does not exist
+            else:
+                return True  # The database exists and has the master password
+
+        except sqlite3.OperationalError:
+            # If there's an OperationalError, the table or database doesn't exist
+            return False
+        
+    def init_db(self, masterpassword):
         #connect to the database
         self.connect()
         #Main Table/format for storing the data
@@ -112,21 +145,26 @@ class PasswordDataBase ():
         
         # Check if there is a salt, if not, create one
         self.cursor.execute("SELECT salt FROM masterpassword")
-        if not self.cursor.fetchone():                  #fetch the first row and check if it's empty
-            salt =os.urandom(16)
-            self.cursor.execute("INSERT INTO masterpassword (salt) VALUES (?)", (salt,))
+        result = self.cursor.fetchone()  # Fetch the first row
+
+        if not result:  # If no salt exists, create one
+            salt = os.urandom(SALT_SIZE)
+            hashedpassword = hashlib.pbkdf2_hmac('sha256', masterpassword.encode(), salt, 100000)
+            self.cursor.execute("INSERT INTO masterpassword (salt, hash) VALUES (?,?)", (salt, hashedpassword))
             self.connection.commit()
         else: 
-            salt = self.cursor.fetchone()
-        
-        print(salt)
+            # Unpack the salt (fetchone() returns a tuple but derive key needs a byte)
+            salt = result[0]
         self.key = derive_key(masterpassword, salt)
-
-    def connect(self):
-        #connect to the database
-        self.connection = sqlite3.connect("passwords.db")
-        self.cursor = self.connection.cursor()
         
+        
+##################################
+#                                #
+#             Methods            #
+#                                #
+##################################
+
+
     def get_domains(self):
         #connect to the database
         self.connect()
@@ -139,14 +177,22 @@ class PasswordDataBase ():
         return domains
     
     def add_entry(self, domain, username, password):
-        #connect to the database
+        # Connect to the database
         self.connect()
-        
-        #add a domain, username and password at the same time
-        encryptedPassword, iv = encrypt_data(password, self.key)
-        self.cursor.execute("INSERT INTO passwords (domain, username, password, IV) VALUES (?,?,?,?)", (domain, username, encryptedPassword, iv))
-        self.connection.commit()
-        self.connection.close()    
+        try:
+            # Encrypt the password
+            encryptedPassword, iv = encrypt_data(password, self.key)
+            # Attempt to insert the new entry
+            self.cursor.execute(
+                "INSERT INTO passwords (domain, username, password, IV) VALUES (?,?,?,?)",
+                (domain, username, encryptedPassword, iv)
+            )
+            self.connection.commit()
+        except sqlite3.IntegrityError:
+            print(f"Error: The domain '{domain}' already exists in the database.")
+        finally:
+            self.connection.close()
+   
 
     def delete_entry(self, domain):
         #connect to the database
@@ -191,11 +237,36 @@ class PasswordDataBase ():
         #fetch data based of the domain provided
         self.cursor.execute("SELECT * FROM passwords WHERE domain = ?", (domain,))
         data = self.cursor.fetchall()
+        self.connection.close()
         return data
     
-PasswordDataBase = PasswordDataBase("1234")
-PasswordDataBase.add_entry("google.com", "vincent", "Tye" )
-print(PasswordDataBase.get_domains())
+    def compare_masterpassword_hash(self, provided_password):
+        # Connect to the database
+        self.connect()
+        
+        # Get the hash from the database
+        self.cursor.execute("SELECT hash FROM masterpassword")
+        result = self.cursor.fetchone()
+        if result:
+            #fetch salt for hashing
+            self.cursor.execute("SELECT salt FROM masterpassword")
+            temp = self.cursor.fetchone()
+            self.connection.close()
+            
+            #convert salt,masterpassword from tuple into byte
+            salt = temp[0]
+            stored_password_hash = result[0]
 
+            #hash the provided password for comparrison
+            provided_password_hashed = hashlib.pbkdf2_hmac('sha256', provided_password.encode(), salt, 100000)
+            
+            if stored_password_hash == provided_password_hashed :
+                return True
+            else: 
+                return False
+
+        else:
+            self.connection.close()
+            return False  # Return None if no hash exists
 
 

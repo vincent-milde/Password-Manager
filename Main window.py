@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QPushButton, QWidget, QStackedWidget
 from PyQt5.QtCore import Qt
-
+from PasswordArea import PasswordArea
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
         self.about_button.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
 
     def add_home_layer(self):
-        home_layer = QWidget()
+        home_layer = PasswordArea()
         layout = QVBoxLayout(home_layer)
         layout.addWidget(QPushButton("Welcome to Home"))
         self.stacked_widget.addWidget(home_layer)

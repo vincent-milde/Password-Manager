@@ -3,14 +3,17 @@ from PyQt5.QtWidgets import *        #QApplication, QMainWindow, QVBoxLayout, QW
 from PyQt5.QtCore import *           # Qt
 from PyQt5.QtGui import *
 from PasswordWidget import PasswordWidget
+from PasswordDataBase import PasswordDataBase
 #placeholder for masterpassword
-HasAcess = False
+
    
 class PasswordArea(QMainWindow):
     def __init__(self):
         #Initiliaze main window
         super().__init__()
-
+        self.db = PasswordDataBase()
+        self.masterpassword = ""
+        self.hasAcess = True
         self.setWindowTitle("PasswordArea")
         self.setGeometry(100, 100, 800, 600)
         
@@ -76,19 +79,25 @@ class PasswordArea(QMainWindow):
         
         #List Widget
         list_widget = QListWidget()
-        list_widget.addItems([f"Item {i}" for i in range(1, 11)])
+        self.list_add_items(list_widget)
         list_widget.itemClicked.connect(self.password_details)
         layout.addWidget(list_widget)
 
         # Password Details Placeholder
         return frame
     
-    
+    def list_add_items(self, list_widget):
+        db = self.db
+        domains = db.get_domains()
+        for domain in domains:
+            list_widget.addItem(domain[0])
+        
     def password_details(self, item):
         print(f"Selected Item: {item.text()}")
     
     #Create the Frame etc for the right side 
     def create_right_side(self):
+        
         main_frame = QFrame()
         main_layout = QVBoxLayout(main_frame)
         
@@ -123,14 +132,14 @@ class PasswordArea(QMainWindow):
         self.username_widget = PasswordWidget()
         self.username_widget.setLabel("username: ")
         self.username_widget.setPassword("Vincent")
-        self.username_widget.setAccess(HasAcess)
+        self.username_widget.setAccess(self.hasAcess)
         layout_top.addWidget(self.username_widget)
 
     #password Section
         self.password_widget = PasswordWidget()
         self.password_widget.setLabel("password: ")
         self.password_widget.setPassword("Milde")
-        self.password_widget.setAccess(HasAcess)
+        self.password_widget.setAccess(self.hasAcess)
         layout_top.addWidget(self.password_widget)
         
     #Frame 2 (Showcase of databreaches) ---  WIP
@@ -146,9 +155,13 @@ class PasswordArea(QMainWindow):
             print("Edit button clicked!")
 
 
+#Debug
+'''
+
 # Main application loop
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = PasswordArea()
     window.show()
     sys.exit(app.exec_())
+'''
