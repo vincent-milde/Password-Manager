@@ -4,24 +4,11 @@ from PyQt5.QtWidgets import *        #QApplication, QMainWindow, QVBoxLayout, QW
 from PyQt5.QtCore import *           # Qt
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import QWidget
-from PasswordDataBase import PasswordDataBase
-hasAcess = False    
-class PublicArea(QMainWindow):
-    #Constructor method
-    def __init__(self):
-        #init main methods
-        super().__init__()
-        self.init_ui()
-        self.init_styling()
-        
 
-##################################
-#                                #
-#           UI ELements          #
-#                                #
-##################################   
-     
-    def init_ui(self):
+class PublicArea(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        
         #Initilliaze 
         self.setWindowTitle("Public Area")
         self.setGeometry(100, 100, 800, 600)
@@ -35,8 +22,7 @@ class PublicArea(QMainWindow):
         layout.setSpacing(20)
 
         #styling with frame
-        self.frame = QFrame()
-        frame = self.frame
+        frame = QFrame()
         frame.setFrameShape(QFrame.StyledPanel)
         frame.setFrameShadow(QFrame.Raised)
         frame_layout = QGridLayout()
@@ -64,7 +50,6 @@ class PublicArea(QMainWindow):
         #Entryfield
         self.entry = QLineEdit()
         self.entry.setPlaceholderText("Your Password...")
-        self.entry.setEchoMode(QLineEdit.Password)
         frame_layout.addWidget(self.entry)
         
         #Login button
@@ -72,15 +57,12 @@ class PublicArea(QMainWindow):
         self.login_button.setText("Login")
         self.login_button.clicked.connect(self.login_button_handler)
         frame_layout.addWidget(self.login_button)
-    
-    
-##################################
-#                                #
-#             Styling            #
-#                                #
-##################################
-    
-    def init_styling(self):
+   
+        ##################################
+        #                                #
+        #             Styling            #
+        #                                #
+        ##################################
 
         #Main style sheet
         PALETTE = {
@@ -110,7 +92,7 @@ class PublicArea(QMainWindow):
         """)
 
         # Frame Styling
-        self.frame.setStyleSheet(f"""
+        frame.setStyleSheet(f"""
             background-color: {PALETTE['accent_color']};
             border: 2px solid {PALETTE['highlight_color']};
             border-radius: 15px;
@@ -143,43 +125,10 @@ class PublicArea(QMainWindow):
             border-radius: 10px;
             padding: 10px;
         """)
-        
-        
-##################################
-#                                #
-#            Handlers            #
-#                                #
-##################################
-
     def login_button_handler(self):
         print("login button has been pressed")
-        password = self.entry.text()
-        db = PasswordDataBase(password)
-        #check if there is a database
-        if db.database_exists():       
-            self.db_exists_handler(password,db)
-        #create a new database
-        elif not db.database_exists:
-            self.db_does_not_exist_handler(password, db)
-            
-        #precaution
-        else:
-            Warning("undefined state when trying to log in")
-            
-    def db_exists_handler(self,password, db):               
-        #if correct password
-        if db.compare_masterpassword_hash(password):
-            db.init_db(password)
-            hasAcess = True
-        #wrong password
-        else:
-            print("Wrong password!")    
-            self.entry.clear()  
-            self.instruction_label.setText()
-                         
-    def db_does_not_exist_handler(self,password, db):
         pass
-              
+
 #Debug        
 # Main application loop
 if __name__ == "__main__":
