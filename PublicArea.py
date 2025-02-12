@@ -7,15 +7,20 @@ from PyQt5.QtWidgets import QWidget
 from PasswordDataBase import PasswordDataBase
 hasAcess = False    
 class PublicArea(QMainWindow):
+    
+    #signals for passing data
+    login_successful = pyqtSignal(object, str, bool)  #(database, password, hasAcess)
+    
     #Constructor method
     def __init__(self):
         #init object
         super().__init__()
-        
+
         #global variables
         self.masterpassword = ""
         self.pass_old = None
         self.db = PasswordDataBase()
+        self.hasAcess = False
         #init the GUI
         self.init_ui()
         self.init_styling()
@@ -177,17 +182,25 @@ class PublicArea(QMainWindow):
            
         #if database exists and password is not none
         if db.database_exists() and password:
+            
             #correct password
             if db.compare_masterpassword_hash(password):
+                
                 db.init_db(password)
-                self.instruction_label.setText("Passwords is correct")
+                
+                #pass data to main window
                 self.masterpassword = password
-                hasAcess = True
+                self.hasAcess = True
+                
+                #emit a signal for piping to main window
+                self.login_successful.emit(self.db, self.masterpassword, self.hasAcess) 
+                
             #wrong password
             elif password:
                 print("Wrong password!")    
                 self.entry.clear()  
                 self.instruction_label.setText("Wrong password, try again.")
+                
         #if db exists change default label text (init branch)        
         elif db.database_exists():
             print("Database exists")    
@@ -196,23 +209,46 @@ class PublicArea(QMainWindow):
             
     #database does not exist                    
     def db_does_not_exist_handler(self,password):
+        
+        #database and variables to store last password for checking
         db = self.db
         pass_new = self.entry.text()
         self.entry.clear()
+        
+        #password has to be at least 6 characters
         if len(pass_new) >= 6: 
+            
             self.instruction_label.setText("Please confirm the password")
+            
+            #if the password is correct
             if self.pass_old == pass_new:
-                self.instruction_label.setText("Passwords is correct")
+                
+                #create new database with provided password
                 db.init_db(pass_new)
+                self.instruction_label.setText("Passwords is correct")
+                
+                #pass data to main window
+                self.masterpassword = pass_new
+                self.hasAcess = True
+                
+                #emit a signal for piping to main window
+                self.login_successful.emit(self.db, self.masterpassword, self.hasAcess) 
+            
+            #if this was the first entry                     
             elif not self.pass_old:
                 self.pass_old = pass_new
+            #must have been atleast the 2nd try and passwords did not match
             else:
                 self.instruction_label.setText("Passwords did not match, please try again")
                 self.entry.clear()
-        #edge case when there is a wrong password match + too short
+                self.pass_old = None
+                
+        #if the password is wrong and too short (to avoid saying too short try again)
         elif self.pass_old:
             self.instruction_label.setText("Passwords did not match, please try again")
             self.entry.clear()
+            self.pass_old = None
+        #password is too short
         else:
             self.instruction_label.setText("Password is too short please try again")
             self.pass_old = None
@@ -220,9 +256,10 @@ class PublicArea(QMainWindow):
               
 #Debug        
 # Main application loop
+"""
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = PublicArea()
     window.show()
     sys.exit(app.exec_())
-        
+"""

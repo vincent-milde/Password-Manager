@@ -60,21 +60,26 @@ def encrypt_data(data, key):
 
 # Decrypt function using AES in CBC mode
 def decrypt_data(encrypted_data, key, iv):
-    # Extract the salt, IV, and ciphertext from the encrypted data
-    ciphertext = encrypted_data
-    
+    # Ensure that the IV is 16 bytes
+    if len(iv) != IV_SIZE:
+        raise ValueError(f"Invalid IV length ({len(iv)}) for CBC")
+
     # Set up AES CBC mode
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     decryptor = cipher.decryptor()
-    
+
     # Decrypt the data
-    padded_data = decryptor.update(ciphertext) + decryptor.finalize()
-    
+    padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+
     # Remove padding
     unpadder = padding.PKCS7(128).unpadder()
     data = unpadder.update(padded_data) + unpadder.finalize()
-    
-    return data.decode()
+
+    return data.decode()  # Decode the byte data to a string
+
+
+
+
 
 ##################################################
 #
@@ -164,7 +169,6 @@ class PasswordDataBase ():
 #                                #
 ##################################
 
-
     def get_domains(self):
         #connect to the database
         self.connect()
@@ -177,21 +181,22 @@ class PasswordDataBase ():
         return domains
     
     def add_entry(self, domain, username, password):
-        # Connect to the database
         self.connect()
         try:
-            # Encrypt the password
             encryptedPassword, iv = encrypt_data(password, self.key)
-            # Attempt to insert the new entry
+
+            # Store encryptedPassword and IV as BLOBs
             self.cursor.execute(
                 "INSERT INTO passwords (domain, username, password, IV) VALUES (?,?,?,?)",
-                (domain, username, encryptedPassword, iv)
+                (domain, username, sqlite3.Binary(encryptedPassword), sqlite3.Binary(iv))
             )
             self.connection.commit()
         except sqlite3.IntegrityError:
             print(f"Error: The domain '{domain}' already exists in the database.")
         finally:
             self.connection.close()
+
+
    
 
     def delete_entry(self, domain):
@@ -203,42 +208,61 @@ class PasswordDataBase ():
         self.connection.commit()
         self.connection.close()
 
-    def edit_data(self, username, password):
-        #connect to the database
+    def edit_data(self, domain, username, password):
+        # Connect to the database
         self.connect()
-        
-        #edit both the username and password
-        self.cursor.execute("UPDATE passwords SET username = ?, password = ?", (username, password))
+        print(domain, username, password)
+
+        # Check if the domain exists before trying to update it
+        self.cursor.execute("SELECT COUNT(*) FROM passwords WHERE domain = ?", (domain,))
+        domain_exists = self.cursor.fetchone()[0] > 0
+
+        if not domain_exists:
+            print(f"Domain '{domain}' not found in the database.")
+            self.connection.close()
+            return
+
+        # Encrypt new password
+        encryptedPassword, iv = encrypt_data(password, self.key)
+
+        # Update both the username and password
+        self.cursor.execute("UPDATE passwords SET username = ?, password = ?, IV = ? WHERE domain = ?", 
+                            (username, sqlite3.Binary(encryptedPassword), sqlite3.Binary(iv), domain))
+
+        print("Data edited")
         self.connection.commit()
         self.connection.close()
         
-    def edit_username(self, username):
-        #connect to the database
+    def fetch_by_domain(self, domain):
         self.connect()
-        
-        #edit the username only
-        self.cursor.execute("UPDATE passwords SET username = ?", (username,))
-        self.connection.commit()
-        self.connection.close()
-        
-    def edit_password(self, password):
-        #connect to the database
-        self.connect()
-        
-        #edit the password only
-        self.cursor.execute("UPDATE passwords SET password = ?", (password,))
-        self.connection.commit()
-        self.connection.close()
-        
-    def fetch_by_domain(self,domain):
-        #connect to the database
-        self.connect()
-        
-        #fetch data based of the domain provided
-        self.cursor.execute("SELECT * FROM passwords WHERE domain = ?", (domain,))
-        data = self.cursor.fetchall()
-        self.connection.close()
-        return data
+
+        # Fetch the encrypted data and IV
+        self.cursor.execute("SELECT username, password, IV FROM passwords WHERE domain = ?", (domain,))
+        data = self.cursor.fetchone()
+
+        if data:
+            username, encrypted_password, iv = data
+
+            # Ensure encrypted_password and IV are bytes
+            if isinstance(encrypted_password, memoryview):
+                encrypted_password = encrypted_password.tobytes()
+            if isinstance(iv, memoryview):
+                iv = iv.tobytes()
+
+            # Debugging output
+            print(f"IV length: {len(iv)} bytes")
+            print(f"Encrypted Data Length: {len(encrypted_password)}")
+
+            # Decrypt the password
+            password = decrypt_data(encrypted_password, self.key, iv)
+            self.connection.close()
+
+            return username, password
+        else:
+            self.connection.close()
+            return None, None
+
+
     
     def compare_masterpassword_hash(self, provided_password):
         # Connect to the database
@@ -269,4 +293,5 @@ class PasswordDataBase ():
             self.connection.close()
             return False  # Return None if no hash exists
 
+        
 

@@ -11,7 +11,6 @@ class PasswordWidget(QWidget):
         
         #Initillize main
         super().__init__()
-        self.setPassword("password")
         self.hasAcess = False
         
         #Initilazing layout for the Text field and the 2 buttons to show/hide and copy
@@ -45,6 +44,9 @@ class PasswordWidget(QWidget):
         self.copy_button.setText("Copy")
         self.copy_button.clicked.connect(self.copyButtonClicked)
         layout.addWidget(self.copy_button)
+        
+        #set password for the widget
+        self.setPassword("password")
     
     def setLabel(self, str):
         self.label.setText(str)
@@ -61,15 +63,17 @@ class PasswordWidget(QWidget):
         if self.hasAcess:
             if self.line_edit.isReadOnly():
                 self.line_edit.setReadOnly(False)
+                self.showPassword()
             elif not self.line_edit.isReadOnly():
                 self.line_edit.setReadOnly(True)
             else:
                 Warning("Edit state undefined!")
             
     def setEditable(self, toggleBool):
-        if self.hasAcess:
+        if self.hasAcess and self.password_is_Hidden == False:
             if toggleBool == True:
                 self.line_edit.setReadOnly(False)
+                self.showPassword()
             elif toggleBool == False:
                 self.line_edit.setReadOnly(True)
             else:
@@ -96,16 +100,20 @@ class PasswordWidget(QWidget):
             Warning("No Access but bypassed into GUI")
                    
     def setPassword(self, password):
-        self.password = password    
+        self.password = password
+        self.line_edit.setText(password)    
+    
+    #returns the text of the line edit not the password variable!
+    def getText(self):
+        return self.line_edit.text()
         
     def hidePassword(self):
-        masked_password = "*" * len(self.password)
-        self.line_edit.setText(masked_password)
+        self.line_edit.setEchoMode(QLineEdit.Password)
         self.password_is_Hidden = True
         
     def showPassword(self):
         if self.hasAcess:
-            self.line_edit.setText(self.password)
+            self.line_edit.setEchoMode(QLineEdit.Normal)
             self.password_is_Hidden = False
         else:
             print("Access Denied")
