@@ -1,5 +1,5 @@
 # Password-Manager
-A password manager from scrap
+A password manager from scratch
 
 
 Password Manager
